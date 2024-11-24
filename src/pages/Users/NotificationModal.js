@@ -63,12 +63,13 @@ const NotificationModal = ({ user, onClose }) => {
           <label>
             Type:
             <select value={type} onChange={(e) => setType(e.target.value)}>
-              <option value="system">Info</option>
-              <option value="alert">Alert</option>
-              <option value="promo">Promo</option>
-              <option value="reminder">Promo</option>
-              <option value="feedback">Promo</option>
-              <option value="custom">Action</option>
+              <option value="system">system</option>
+              <option value="promo">promo</option>
+              <option value="reminder">reminder</option>
+              <option value="feedback">feedback</option>
+              <option value="custom">custom</option>
+              <option value="order">order</option>
+
             </select>
           </label>
           <label>

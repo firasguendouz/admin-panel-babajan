@@ -14,36 +14,36 @@ export const registerAdmin = async (data) => {
 
 // ==================== USERS ====================
 
-// Get all users
-export const fetchUsers = async (params) => {
+// Get all users with optional filters and pagination
+export const fetchUsers = async (params = {}) => {
   return axiosInstance.get('/admin/users', { params });
 };
 
-// Delete a user
+// Delete a user by ID
 export const deleteUser = async (userId) => {
   return axiosInstance.delete(`/admin/users/${userId}`);
 };
 
-// Update user information (Admin or Super Admin only)
+// Update user information by ID (Admin or Super Admin only)
 export const updateUser = async (userId, updateData) => {
   return axiosInstance.patch(`/admin/users/${userId}`, updateData);
 };
 
 // ==================== ORDERS ====================
 
-// Get all orders
-export const fetchOrders = async (params) => {
+// Get all orders with optional filters and pagination
+export const fetchOrders = async (params = {}) => {
   return axiosInstance.get('/admin/orders', { params });
 };
 
-// Get order details
+// Get order details by ID
 export const fetchOrderDetails = async (orderId) => {
   return axiosInstance.get(`/admin/orders/${orderId}`);
 };
 
-// Update order
+// Update order details by ID
 export const updateOrder = async (orderId, updateData) => {
-  return axiosInstance.patch(`/orders/admin/${orderId}`, updateData);
+  return axiosInstance.patch(`/admin/orders/${orderId}`, updateData);
 };
 
 // ==================== ITEMS ====================
@@ -53,17 +53,22 @@ export const createItem = async (data) => {
   return axiosInstance.post('/admin/items', data);
 };
 
-// Update an item
+// Get all items with optional search, filters, and pagination
+export const fetchItems = async (params = {}) => {
+  return axiosInstance.get('/items', { params });
+};
+
+// Update an existing item by ID
 export const updateItem = async (itemId, data) => {
   return axiosInstance.put(`/admin/items/${itemId}`, data);
 };
 
-// Delete an item
+// Soft delete an item by ID
 export const deleteItem = async (itemId) => {
   return axiosInstance.delete(`/admin/items/${itemId}`);
 };
 
-// Restore a soft-deleted item
+// Restore a soft-deleted item by ID
 export const restoreItem = async (itemId) => {
   return axiosInstance.patch(`/admin/items/${itemId}/restore`);
 };
@@ -75,66 +80,61 @@ export const createPromotion = async (data) => {
   return axiosInstance.post('/admin/promotions', data);
 };
 
-// Get all promotions
-export const fetchPromotions = async (params) => {
+// Get all promotions with optional filters and pagination
+export const fetchPromotions = async (params = {}) => {
   return axiosInstance.get('/admin/promotions', { params });
 };
 
-// Update a promotion
+// Update an existing promotion by ID
 export const updatePromotion = async (promoId, data) => {
   return axiosInstance.put(`/admin/promotions/${promoId}`, data);
 };
 
-// Delete a promotion
+// Delete a promotion by ID
 export const deletePromotion = async (promoId) => {
   return axiosInstance.delete(`/admin/promotions/${promoId}`);
 };
 
-// Toggle promotion status
+// Toggle promotion active status by ID
 export const togglePromotionStatus = async (promoId) => {
   return axiosInstance.patch(`/admin/promotions/${promoId}/status`);
 };
 
 // ==================== NOTIFICATIONS ====================
 
-// Create a new notification
+// Create a new notification (to a specific user or all users)
 export const createNotification = async (data) => {
   return axiosInstance.post('/notifications', data);
 };
 
-// Get all notifications for a user
-export const fetchNotifications = async (params) => {
+// Get all notifications with optional filters and pagination
+export const fetchNotifications = async (params = {}) => {
   return axiosInstance.get('/notifications', { params });
 };
 
-// Mark a notification as read
+// Mark a single notification as read by ID
 export const markNotificationAsRead = async (notificationId) => {
   return axiosInstance.patch(`/notifications/${notificationId}/read`);
 };
 
-// Mark all notifications as read
+// Mark all notifications as read for the logged-in user
 export const markAllNotificationsAsRead = async () => {
   return axiosInstance.patch('/notifications/read-all');
 };
 
-// Delete a notification
+// Delete a notification by ID
 export const deleteNotification = async (notificationId) => {
   return axiosInstance.delete(`/notifications/${notificationId}`);
 };
 
-// Fetch unread notifications count
+// Fetch unread notifications count for the logged-in user
 export const fetchUnreadCount = async () => {
   return axiosInstance.get('/notifications/unread-count');
 };
 
 // ==================== ANALYTICS ====================
 
-// Fetch admin analytics
+// Fetch admin analytics data
 export const fetchAnalytics = async () => {
   return axiosInstance.get('/admin/analytics');
-};
-
-// Get all items (supports search, filter, and pagination)
-export const fetchItems = async (params) => {
-  return axiosInstance.get('/items', { params });
 };
