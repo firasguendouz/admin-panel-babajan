@@ -24,6 +24,11 @@ export const deleteUser = async (userId) => {
   return axiosInstance.delete(`/admin/users/${userId}`);
 };
 
+// Update user information (Admin or Super Admin only)
+export const updateUser = async (userId, updateData) => {
+  return axiosInstance.patch(`/admin/users/${userId}`, updateData);
+};
+
 // ==================== ORDERS ====================
 
 // Get all orders
