@@ -1,32 +1,28 @@
 import './ItemList.css';
 
 import React, { useEffect, useState } from 'react';
-import { deleteItem, fetchItems } from '../../api/adminApi';
+import { createItem, deleteItem, fetchItems, updateItem } from '../../api/adminApi';
 
-import { debounce } from '../../utils/helpers';
-import { formatDate } from '../../utils/dateFormatter';
+import ItemEditModal from './ItemEditModal';
+import ItemFilters from './ItemFilters';
+import ItemViewModal from './ItemViewModal';
 
 const ItemList = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState({ search: '', category: '', availability: '' });
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [editableItem, setEditableItem] = useState(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [selectedItem, setSelectedItem] = useState(null); // For modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Fetch items from API
   useEffect(() => {
     const fetchItemData = async () => {
       setLoading(true);
       try {
-        const params = {
-          search,
-          category: categoryFilter,
-          page,
-          limit,
-        };
+        const params = { ...filters, page, limit };
         const response = await fetchItems(params);
         setItems(response.data.data);
         setTotalItems(response.data.meta.total);
@@ -38,13 +34,19 @@ const ItemList = () => {
     };
 
     fetchItemData();
-  }, [search, categoryFilter, page, limit]);
+  }, [filters, page, limit]);
+
+  // Handle filter changes
+  const handleFiltersChange = (updatedFilters) => {
+    setFilters(updatedFilters);
+    setPage(1); // Reset to the first page on filter change
+  };
 
   const handleDelete = async (itemId) => {
     if (window.confirm('Are you sure you want to delete this item?')) {
       try {
         await deleteItem(itemId);
-        setItems(items.filter((item) => item._id !== itemId));
+        setItems((prev) => prev.filter((item) => item._id !== itemId));
         alert('Item deleted successfully.');
       } catch (error) {
         console.error('Error deleting item:', error);
@@ -52,16 +54,29 @@ const ItemList = () => {
     }
   };
 
-  const handleSearchChange = debounce((value) => setSearch(value), 500);
-
-  const handleViewItem = (item) => {
-    setSelectedItem(item); // Set the selected item
-    setIsModalOpen(true); // Open the modal
+  const handleSaveEdit = async (itemId, updatedData) => {
+    try {
+      const response = await updateItem(itemId, updatedData);
+      setItems((prev) =>
+        prev.map((item) => (item._id === itemId ? { ...item, ...response.data.data } : item))
+      );
+      setEditableItem(null);
+      alert('Item updated successfully.');
+    } catch (error) {
+      console.error('Error updating item:', error);
+      alert('Failed to update item.');
+    }
   };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedItem(null);
+  const handleCreateItem = async (newItemData) => {
+    try {
+      const response = await createItem(newItemData);
+      setItems((prev) => [response.data.data, ...prev]);
+      alert('New item created successfully.');
+    } catch (error) {
+      console.error('Error creating item:', error);
+      alert('Failed to create item.');
+    }
   };
 
   const totalPages = Math.ceil(totalItems / limit);
@@ -70,35 +85,21 @@ const ItemList = () => {
     <div className="item-list-container">
       <h2>Item Management</h2>
 
-      {/* Filters */}
-      <div className="item-filters">
-        <input
-          type="text"
-          placeholder="Search by name or ID..."
-          onChange={(e) => handleSearchChange(e.target.value)}
-        />
-        <select onChange={(e) => setCategoryFilter(e.target.value)} value={categoryFilter}>
-          <option value="">All Categories</option>
-          <option value="Fruits">Fruits</option>
-          <option value="Vegetables">Vegetables</option>
-          <option value="Beverages">Beverages</option>
-        </select>
-      </div>
+      <ItemFilters onFiltersChange={handleFiltersChange} onCreateNewItem={() => setEditableItem({})} />
 
-      {/* Item Table */}
       {loading ? (
         <p>Loading items...</p>
       ) : (
         <table className="item-table">
           <thead>
             <tr>
+              <th>Photo</th>
               <th>Item ID</th>
               <th>Name</th>
               <th>Category</th>
               <th>Price</th>
               <th>Stock</th>
-              <th>Tags</th>
-              <th>Created At</th>
+              <th>Available</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -106,32 +107,27 @@ const ItemList = () => {
             {items.length > 0 ? (
               items.map((item) => (
                 <tr key={item._id}>
+                  <td>
+                    {item.photos.length > 0 ? (
+                      <img
+                        src={item.photos[0]}
+                        alt={item.name.en}
+                        style={{ width: '50px', height: '50px', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      'No Photo'
+                    )}
+                  </td>
                   <td>{item._id}</td>
                   <td>{item.name.en}</td>
                   <td>{item.category}</td>
                   <td>${item.price.toFixed(2)}</td>
                   <td>{item.stock}</td>
-                  <td>{item.tags.join(', ')}</td>
-                  <td>{formatDate(item.createdAt)}</td>
+                  <td>{item.available ? 'Yes' : 'No'}</td>
                   <td>
-                    <button
-                      className="view-button"
-                      onClick={() => handleViewItem(item)}
-                    >
-                      View
-                    </button>
-                    <button
-                      className="edit-button"
-                      onClick={() => alert(`Edit feature for item ${item.name.en} coming soon!`)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="delete-button"
-                      onClick={() => handleDelete(item._id)}
-                    >
-                      Delete
-                    </button>
+                    <button onClick={() => setSelectedItem(item)}>View</button>
+                    <button onClick={() => setEditableItem(item)}>Edit</button>
+                    <button onClick={() => handleDelete(item._id)}>Delete</button>
                   </td>
                 </tr>
               ))
@@ -144,69 +140,27 @@ const ItemList = () => {
         </table>
       )}
 
-      {/* Pagination */}
       <div className="pagination">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage((prev) => prev - 1)}
-        >
+        <button disabled={page === 1} onClick={() => setPage((prev) => prev - 1)}>
           Previous
         </button>
         <span>
           Page {page} of {totalPages}
         </span>
-        <button
-          disabled={page === totalPages}
-          onClick={() => setPage((prev) => prev + 1)}
-        >
+        <button disabled={page === totalPages} onClick={() => setPage((prev) => prev + 1)}>
           Next
         </button>
       </div>
 
-      {/* Item Details Modal */}
-      {isModalOpen && selectedItem && (
-        <div className="modal">
-          <div className="modal-content">
-            <span className="close-button" onClick={closeModal}>
-              &times;
-            </span>
-            <h3>Item Details</h3>
-            <p>
-              <strong>Item ID:</strong> {selectedItem._id}
-            </p>
-            <p>
-              <strong>Name:</strong> {selectedItem.name.en}
-            </p>
-            <p>
-              <strong>Category:</strong> {selectedItem.category}
-            </p>
-            <p>
-              <strong>Price:</strong> ${selectedItem.price.toFixed(2)}
-            </p>
-            <p>
-              <strong>Stock:</strong> {selectedItem.stock}
-            </p>
-            <p>
-              <strong>Tags:</strong> {selectedItem.tags.join(', ') || 'No tags'}
-            </p>
-            <p>
-              <strong>Available:</strong> {selectedItem.available ? 'Yes' : 'No'}
-            </p>
-            <p>
-              <strong>Created At:</strong> {formatDate(selectedItem.createdAt)}
-            </p>
-            <p>
-              <strong>Photos:</strong>
-              <ul>
-                {selectedItem.photos.map((photo, index) => (
-                  <li key={index}>
-                    <img src={photo} alt={selectedItem.name.en} style={{ width: '50px', height: '50px' }} />
-                  </li>
-                ))}
-              </ul>
-            </p>
-          </div>
-        </div>
+      {selectedItem && <ItemViewModal item={selectedItem} onClose={() => setSelectedItem(null)} />}
+      {editableItem && (
+        <ItemEditModal
+          item={editableItem}
+          onSave={(updatedData) =>
+            editableItem._id ? handleSaveEdit(editableItem._id, updatedData) : handleCreateItem(updatedData)
+          }
+          onClose={() => setEditableItem(null)}
+        />
       )}
     </div>
   );

@@ -36,9 +36,14 @@ export const fetchOrders = async (params) => {
   return axiosInstance.get('/admin/orders', { params });
 };
 
-// Update order status
-export const updateOrderStatus = async (data) => {
-  return axiosInstance.patch('/admin/orders/status', data);
+// Get order details
+export const fetchOrderDetails = async (orderId) => {
+  return axiosInstance.get(`/admin/orders/${orderId}`);
+};
+
+// Update order
+export const updateOrder = async (orderId, updateData) => {
+  return axiosInstance.patch(`/orders/admin/${orderId}`, updateData);
 };
 
 // ==================== ITEMS ====================
@@ -128,6 +133,7 @@ export const fetchUnreadCount = async () => {
 export const fetchAnalytics = async () => {
   return axiosInstance.get('/admin/analytics');
 };
+
 // Get all items (supports search, filter, and pagination)
 export const fetchItems = async (params) => {
   return axiosInstance.get('/items', { params });

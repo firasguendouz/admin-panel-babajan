@@ -1,35 +1,26 @@
 import './OrderList.css';
 
 import React, { useEffect, useState } from 'react';
-import { fetchOrders, updateOrderStatus } from '../../api/adminApi';
+import { fetchOrders, updateOrder } from '../../api/adminApi';
 
-import { debounce } from '../../utils/helpers';
-import { formatDate } from '../../utils/dateFormatter';
+import OrderDetailsModal from './OrderDetailsModal';
+import OrderEditModal from './OrderEditModal';
+import OrderFilters from './OrderFilters';
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState(null); // For modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [editableOrder, setEditableOrder] = useState(null);
 
   useEffect(() => {
     const fetchOrderData = async () => {
       setLoading(true);
       try {
-        const params = {
-          search,
-          status: statusFilter,
-          page,
-          limit,
-        };
-        const response = await fetchOrders(params);
+        const response = await fetchOrders();
         setOrders(response.data.data);
-        setTotalOrders(response.data.pagination.total);
+        setFilteredOrders(response.data.data); // Initialize with all orders
       } catch (error) {
         console.error('Error fetching orders:', error);
       } finally {
@@ -38,56 +29,65 @@ const OrderList = () => {
     };
 
     fetchOrderData();
-  }, [search, statusFilter, page, limit]);
+  }, []);
 
-  const handleStatusUpdate = async (orderId, newStatus) => {
+  const applyFilters = (filters) => {
+    let filtered = [...orders];
+
+    if (filters.search) {
+      const search = filters.search.toLowerCase();
+      filtered = filtered.filter(
+        (order) =>
+          order._id.includes(search) ||
+          order.userId.email.toLowerCase().includes(search) ||
+          order.userId.name.firstName.toLowerCase().includes(search) ||
+          order.userId.name.lastName.toLowerCase().includes(search) ||
+          order.items.some((item) => item.itemId.includes(search)) ||
+          order.deliveryInfo.address.toLowerCase().includes(search)
+      );
+    }
+
+    if (filters.status) {
+      filtered = filtered.filter((order) => order.status === filters.status);
+    }
+
+    if (filters.deliveryType) {
+      filtered = filtered.filter(
+        (order) => order.deliveryInfo.type === filters.deliveryType
+      );
+    }
+
+    if (filters.sort === 'asc') {
+      filtered.sort((a, b) => a.finalAmount - b.finalAmount);
+    } else if (filters.sort === 'desc') {
+      filtered.sort((a, b) => b.finalAmount - a.finalAmount);
+    }
+
+    setFilteredOrders(filtered);
+  };
+
+  const handleEditSave = async (orderId, updateData) => {
     try {
-      await updateOrderStatus({ orderId, status: newStatus });
-      setOrders(
-        orders.map((order) =>
-          order._id === orderId ? { ...order, status: newStatus } : order
+      const response = await updateOrder(orderId, updateData);
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === orderId ? { ...order, ...response.data.data } : order
         )
       );
-      alert('Order status updated successfully.');
+      setEditableOrder(null);
+      alert('Order updated successfully!');
     } catch (error) {
-      console.error('Error updating order status:', error);
+      console.error('Error updating order:', error);
+      alert('Failed to update order. Please try again.');
     }
   };
-
-  const handleSearchChange = debounce((value) => setSearch(value), 500);
-
-  const handleViewOrder = (order) => {
-    setSelectedOrder(order); // Set the selected order
-    setIsModalOpen(true); // Open the modal
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedOrder(null);
-  };
-
-  const totalPages = Math.ceil(totalOrders / limit);
 
   return (
     <div className="order-list-container">
       <h2>Order Management</h2>
 
-      {/* Filters */}
-      <div className="order-filters">
-        <input
-          type="text"
-          placeholder="Search by customer name, email, or ID..."
-          onChange={(e) => handleSearchChange(e.target.value)}
-        />
-        <select onChange={(e) => setStatusFilter(e.target.value)} value={statusFilter}>
-          <option value="">All Statuses</option>
-          <option value="pending">Pending</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
-      </div>
+      <OrderFilters onFiltersChange={applyFilters} />
 
-      {/* Order Table */}
       {loading ? (
         <p>Loading orders...</p>
       ) : (
@@ -98,122 +98,41 @@ const OrderList = () => {
               <th>Customer</th>
               <th>Total</th>
               <th>Status</th>
-              <th>Created At</th>
+              <th>Delivery Type</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {orders.length > 0 ? (
-              orders.map((order) => (
-                <tr key={order._id}>
-                  <td>{order._id}</td>
-                  <td>
-                    {order.userId.name.firstName} {order.userId.name.lastName} <br />
-                    <small>{order.userId.email}</small>
-                  </td>
-                  <td>${order.finalAmount.toFixed(2)}</td>
-                  <td>{order.status}</td>
-                  <td>{formatDate(order.createdAt)}</td>
-                  <td>
-                    <button
-                      className="view-button"
-                      onClick={() => handleViewOrder(order)}
-                    >
-                      View
-                    </button>
-                    {order.status === 'pending' && (
-                      <button
-                        className="complete-button"
-                        onClick={() => handleStatusUpdate(order._id, 'completed')}
-                      >
-                        Complete
-                      </button>
-                    )}
-                    {order.status !== 'cancelled' && (
-                      <button
-                        className="cancel-button"
-                        onClick={() => handleStatusUpdate(order._id, 'cancelled')}
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6">No orders found.</td>
+            {filteredOrders.map((order) => (
+              <tr key={order._id}>
+                <td>{order._id}</td>
+                <td>{`${order.userId.name.firstName} ${order.userId.name.lastName}`}</td>
+                <td>${order.finalAmount.toFixed(2)}</td>
+                <td>{order.status}</td>
+                <td>{order.deliveryInfo.type === 'pickup' ? 'Pickup' : 'Delivery'}</td>
+                <td>
+                  <button onClick={() => setSelectedOrder(order)}>View</button>
+                  <button onClick={() => setEditableOrder(order)}>Edit</button>
+                </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       )}
 
-      {/* Pagination */}
-      <div className="pagination">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage((prev) => prev - 1)}
-        >
-          Previous
-        </button>
-        <span>
-          Page {page} of {totalPages}
-        </span>
-        <button
-          disabled={page === totalPages}
-          onClick={() => setPage((prev) => prev + 1)}
-        >
-          Next
-        </button>
-      </div>
+      {selectedOrder && (
+        <OrderDetailsModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+        />
+      )}
 
-      {/* Order Details Modal */}
-      {isModalOpen && selectedOrder && (
-        <div className="modal">
-          <div className="modal-content">
-            <span className="close-button" onClick={closeModal}>
-              &times;
-            </span>
-            <h3>Order Details</h3>
-            <p>
-              <strong>Order ID:</strong> {selectedOrder._id}
-            </p>
-            <p>
-              <strong>Customer Name:</strong> {selectedOrder.userId.name.firstName}{' '}
-              {selectedOrder.userId.name.lastName}
-            </p>
-            <p>
-              <strong>Email:</strong> {selectedOrder.userId.email}
-            </p>
-            <p>
-              <strong>Delivery Address:</strong> {selectedOrder.deliveryInfo.address}
-            </p>
-            <p>
-              <strong>Total Amount:</strong> ${selectedOrder.finalAmount.toFixed(2)}
-            </p>
-            <p>
-              <strong>Status:</strong> {selectedOrder.status}
-            </p>
-            <p>
-              <strong>Payment Method:</strong> {selectedOrder.paymentDetails.method}
-            </p>
-            <p>
-              <strong>Paid At:</strong>{' '}
-              {selectedOrder.paymentDetails.paidAt
-                ? formatDate(selectedOrder.paymentDetails.paidAt)
-                : 'Not Paid'}
-            </p>
-            <h4>Items</h4>
-            <ul>
-              {selectedOrder.items.map((item) => (
-                <li key={item._id}>
-                  Item ID: {item.itemId}, Quantity: {item.quantity}, Total: ${item.total.toFixed(2)}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+      {editableOrder && (
+        <OrderEditModal
+          order={editableOrder}
+          onSave={(updatedData) => handleEditSave(editableOrder._id, updatedData)}
+          onClose={() => setEditableOrder(null)}
+        />
       )}
     </div>
   );
