@@ -3,13 +3,13 @@ import './NotificationList.css';
 import React, { useEffect, useState } from 'react';
 import {
   createNotification,
-  deleteNotification,
   fetchNotifications,
   fetchUsers,
   markAllNotificationsAsRead,
   markNotificationAsRead,
 } from '../../api/adminApi';
 
+import { deleteNotification } from '../../api/adminApi';
 import { formatDate } from '../../utils/dateFormatter';
 
 const NotificationList = () => {

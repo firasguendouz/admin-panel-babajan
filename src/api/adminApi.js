@@ -41,16 +41,16 @@ export const fetchOrderDetails = async (orderId) => {
   return axiosInstance.get(`/admin/orders/${orderId}`);
 };
 
-// Update order details by ID
-export const updateOrder = async (orderId, updateData) => {
-  return axiosInstance.patch(`/admin/orders/${orderId}`, updateData);
+// Update order status by ID
+export const updateOrderStatus = async (orderId, statusData) => {
+  return axiosInstance.put(`/admin/orders/${orderId}/status`, statusData);
 };
 
 // ==================== ITEMS ====================
 
 // Create a new item
-export const createItem = async (data) => {
-  return axiosInstance.post('/admin/items', data);
+export const createItem = async (categoryId, subcategoryId, data) => {
+  return axiosInstance.post(`/items/${categoryId}/${subcategoryId}`, data);
 };
 
 // Get all items with optional search, filters, and pagination
@@ -59,18 +59,45 @@ export const fetchItems = async (params = {}) => {
 };
 
 // Update an existing item by ID
-export const updateItem = async (itemId, data) => {
-  return axiosInstance.put(`/admin/items/${itemId}`, data);
+export const updateItem = async (categoryId, subcategoryId, itemId, data) => {
+  return axiosInstance.patch(`/items/${categoryId}/${subcategoryId}/${itemId}`, data);
 };
 
-// Soft delete an item by ID
-export const deleteItem = async (itemId) => {
-  return axiosInstance.delete(`/admin/items/${itemId}`);
+// Delete an item by ID
+export const deleteItem = async (categoryId, subcategoryId, itemId) => {
+  return axiosInstance.delete(`/items/${categoryId}/${subcategoryId}/${itemId}`);
 };
 
-// Restore a soft-deleted item by ID
-export const restoreItem = async (itemId) => {
-  return axiosInstance.patch(`/admin/items/${itemId}/restore`);
+// ==================== CATEGORIES ====================
+
+// Fetch all categories
+export const fetchCategories = async () => {
+  return axiosInstance.get('/categories');
+};
+
+// Add a new category
+export const createCategory = async (data) => {
+  return axiosInstance.post('/categories', data);
+};
+
+// Update a category by ID
+export const updateCategory = async (categoryId, data) => {
+  return axiosInstance.patch(`/categories/${categoryId}`, data);
+};
+
+// Delete a category by ID
+export const deleteCategory = async (categoryId) => {
+  return axiosInstance.delete(`/categories/${categoryId}`);
+};
+
+// Add a subcategory to a category
+export const addSubcategory = async (categoryId, subcategoryData) => {
+  return axiosInstance.post(`/categories/${categoryId}/subcategories`, subcategoryData);
+};
+
+// Add a product to a subcategory
+export const addProductToSubcategory = async (categoryId, subcategoryId, productData) => {
+  return axiosInstance.post(`/categories/${categoryId}/subcategories/${subcategoryId}/products`, productData);
 };
 
 // ==================== PROMOTIONS ====================
@@ -80,7 +107,7 @@ export const createPromotion = async (data) => {
   return axiosInstance.post('/admin/promotions', data);
 };
 
-// Get all promotions with optional filters and pagination
+// Fetch all promotions with optional filters and pagination
 export const fetchPromotions = async (params = {}) => {
   return axiosInstance.get('/admin/promotions', { params });
 };
@@ -95,39 +122,34 @@ export const deletePromotion = async (promoId) => {
   return axiosInstance.delete(`/admin/promotions/${promoId}`);
 };
 
-// Toggle promotion active status by ID
+// Toggle promotion active status
 export const togglePromotionStatus = async (promoId) => {
-  return axiosInstance.patch(`/admin/promotions/${promoId}/status`);
+  return axiosInstance.put(`/admin/promotions/${promoId}/status`);
 };
 
 // ==================== NOTIFICATIONS ====================
 
-// Create a new notification (to a specific user or all users)
+// Create a new notification
 export const createNotification = async (data) => {
   return axiosInstance.post('/notifications', data);
 };
 
-// Get all notifications with optional filters and pagination
+// Fetch all notifications
 export const fetchNotifications = async (params = {}) => {
   return axiosInstance.get('/notifications', { params });
 };
 
-// Mark a single notification as read by ID
+// Mark a notification as read
 export const markNotificationAsRead = async (notificationId) => {
   return axiosInstance.patch(`/notifications/${notificationId}/read`);
 };
 
-// Mark all notifications as read for the logged-in user
+// Mark all notifications as read
 export const markAllNotificationsAsRead = async () => {
   return axiosInstance.patch('/notifications/read-all');
 };
 
-// Delete a notification by ID
-export const deleteNotification = async (notificationId) => {
-  return axiosInstance.delete(`/notifications/${notificationId}`);
-};
-
-// Fetch unread notifications count for the logged-in user
+// Fetch unread notifications count
 export const fetchUnreadCount = async () => {
   return axiosInstance.get('/notifications/unread-count');
 };

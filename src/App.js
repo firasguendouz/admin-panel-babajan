@@ -1,7 +1,7 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 
 import Dashboard from './pages/Dashboard/Dashboard';
-import ItemList from './pages/Items/ItemList';
+import ItemList from './pages/Items/ItemScreen';
 import Login from './pages/Auth/Login';
 import MainLayout from './components/common/MainLayout';
 import NotificationList from './pages/Notifications/NotificationList';

@@ -1,37 +1,37 @@
 import './ItemEditModal.css';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+import { fetchCategories } from '../../api/adminApi';
 
 const ItemEditModal = ({ item = {}, onSave, onClose }) => {
   const [formData, setFormData] = useState({
     name: item.name || { en: '', de: '' },
     category: item.category || '',
+    subcategory: item.subcategory || '',
     price: item.price || '',
     stock: item.stock || '',
     available: item.available || true,
     photos: item.photos || [],
   });
 
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await fetchCategories();
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handlePhotoAdd = () => {
-    setFormData((prev) => ({
-      ...prev,
-      photos: [...prev.photos, ''],
-    }));
-  };
-
-  const handlePhotoChange = (index, value) => {
-    const updatedPhotos = [...formData.photos];
-    updatedPhotos[index] = value;
-    setFormData((prev) => ({ ...prev, photos: updatedPhotos }));
-  };
-
-  const handlePhotoRemove = (index) => {
-    const updatedPhotos = formData.photos.filter((_, i) => i !== index);
-    setFormData((prev) => ({ ...prev, photos: updatedPhotos }));
   };
 
   const handleSubmit = () => {
@@ -39,7 +39,6 @@ const ItemEditModal = ({ item = {}, onSave, onClose }) => {
       alert('Name, Category, and Price are required.');
       return;
     }
-
     onSave(formData);
   };
 
@@ -59,6 +58,7 @@ const ItemEditModal = ({ item = {}, onSave, onClose }) => {
               onChange={(e) => handleInputChange('name', { ...formData.name, en: e.target.value })}
             />
           </label>
+
           <label>
             Category:
             <select
@@ -66,13 +66,30 @@ const ItemEditModal = ({ item = {}, onSave, onClose }) => {
               onChange={(e) => handleInputChange('category', e.target.value)}
             >
               <option value="">Select a category</option>
-              <option value="Fruits">Fruits</option>
-              <option value="Vegetables">Vegetables</option>
-              <option value="Dairy">Dairy</option>
-              <option value="Beverages">Beverages</option>
-              <option value="Others">Others</option>
+              {categories.map((category) => (
+                <option key={category.slug} value={category.slug}>
+                  {category.title}
+                </option>
+              ))}
             </select>
           </label>
+
+          <label>
+            Subcategory:
+            <select
+              value={formData.subcategory}
+              onChange={(e) => handleInputChange('subcategory', e.target.value)}
+            >
+              <option value="">Select a subcategory</option>
+              {categories
+                .find((cat) => cat.slug === formData.category)?.subcategories.map((subcat) => (
+                  <option key={subcat.slug} value={subcat.slug}>
+                    {subcat.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+
           <label>
             Price:
             <input
@@ -82,6 +99,7 @@ const ItemEditModal = ({ item = {}, onSave, onClose }) => {
               onChange={(e) => handleInputChange('price', parseFloat(e.target.value))}
             />
           </label>
+
           <label>
             Stock:
             <input
@@ -90,6 +108,7 @@ const ItemEditModal = ({ item = {}, onSave, onClose }) => {
               onChange={(e) => handleInputChange('stock', parseInt(e.target.value))}
             />
           </label>
+
           <label>
             Available:
             <input
@@ -98,23 +117,7 @@ const ItemEditModal = ({ item = {}, onSave, onClose }) => {
               onChange={(e) => handleInputChange('available', e.target.checked)}
             />
           </label>
-          <h4>Photos</h4>
-          {formData.photos.map((photo, index) => (
-            <div key={index}>
-              <input
-                type="text"
-                value={photo}
-                onChange={(e) => handlePhotoChange(index, e.target.value)}
-                placeholder="Photo URL"
-              />
-              <button type="button" onClick={() => handlePhotoRemove(index)}>
-                Remove
-              </button>
-            </div>
-          ))}
-          <button type="button" onClick={handlePhotoAdd}>
-            + Add Photo
-          </button>
+
           <button type="button" onClick={handleSubmit}>
             {item._id ? 'Save Changes' : 'Create Item'}
           </button>
