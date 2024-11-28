@@ -1,3 +1,5 @@
+import './MenuActions.css';
+
 const MenuActions = ({ setEditProduct }) => {
     const handleAddProduct = () => {
       setEditProduct({}); // Open ProductEditModal with an empty product object

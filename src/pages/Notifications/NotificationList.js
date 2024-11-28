@@ -9,7 +9,6 @@ import {
   markNotificationAsRead,
 } from '../../api/adminApi';
 
-import { deleteNotification } from '../../api/adminApi';
 import { formatDate } from '../../utils/dateFormatter';
 
 const NotificationList = () => {
@@ -88,19 +87,7 @@ const NotificationList = () => {
     }
   };
 
-  // Delete a notification
-  const handleDeleteNotification = async (notificationId) => {
-    if (window.confirm('Are you sure you want to delete this notification?')) {
-      try {
-        await deleteNotification(notificationId);
-        setNotifications((prev) =>
-          prev.filter((notification) => notification._id !== notificationId)
-        );
-      } catch (err) {
-        console.error('Error deleting notification:', err);
-      }
-    }
-  };
+ 
 
   // Send a new notification
   const handleSendNotification = async () => {
@@ -178,9 +165,7 @@ const NotificationList = () => {
                         Mark as Read
                       </button>
                     )}
-                    <button onClick={() => handleDeleteNotification(notification._id)}>
-                      Delete
-                    </button>
+                    
                   </td>
                 </tr>
               ))}

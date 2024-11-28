@@ -1,11 +1,11 @@
 import './OrderList.css';
 
 import React, { useEffect, useState } from 'react';
-import { fetchOrders, updateOrder } from '../../api/adminApi';
 
 import OrderDetailsModal from './OrderDetailsModal';
 import OrderEditModal from './OrderEditModal';
 import OrderFilters from './OrderFilters';
+import { fetchOrders } from '../../api/adminApi';
 
 const OrderList = () => {
   const [orders, setOrders] = useState([]);
@@ -66,21 +66,7 @@ const OrderList = () => {
     setFilteredOrders(filtered);
   };
 
-  const handleEditSave = async (orderId, updateData) => {
-    try {
-      const response = await updateOrder(orderId, updateData);
-      setOrders((prev) =>
-        prev.map((order) =>
-          order._id === orderId ? { ...order, ...response.data.data } : order
-        )
-      );
-      setEditableOrder(null);
-      alert('Order updated successfully!');
-    } catch (error) {
-      console.error('Error updating order:', error);
-      alert('Failed to update order. Please try again.');
-    }
-  };
+  
 
   return (
     <div className="order-list-container">
@@ -127,13 +113,7 @@ const OrderList = () => {
         />
       )}
 
-      {editableOrder && (
-        <OrderEditModal
-          order={editableOrder}
-          onSave={(updatedData) => handleEditSave(editableOrder._id, updatedData)}
-          onClose={() => setEditableOrder(null)}
-        />
-      )}
+      
     </div>
   );
 };
